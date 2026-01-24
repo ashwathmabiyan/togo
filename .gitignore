@@ -1,7 +1,44 @@
-bin/
-obj/
-.vs/*
-Logs/
-/TmacProxy/Properties/PublishProfiles
-/TmacProxy/.config
-/TmacProxy/TmacProxy.csproj.user
+## --- [ Standard .NET ] ---
+[Bb]in/
+[Oo]bj/
+out/
+publish/
+# Avoid committing NuGet packages
+packages/
+*.nupkg
+
+## --- [ JetBrains Rider (.idea) ] ---
+.idea/
+*.sln.iml
+# Rider user-specific settings
+.idea/.idea.*/.idea/contentModel.xml
+.idea/.idea.*/.idea/modules.xml
+.idea/.idea.*/.idea/workspace.xml
+
+## --- [ Visual Studio ] ---
+.vs/
+*.user
+*.suo
+*.sln.docstates
+# This is for the new "Dev Tunnels" feature
+.devtunnels/
+
+## --- [ VS Code ] ---
+.vscode/
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+
+## --- [ Secrets & Environment ] ---
+# Never commit the local environment configs
+appsettings.Development.json
+appsettings.Local.json
+*.pfx
+*.certificate
+.env
+.usersecrets
+
+## --- [ OS Specific ] ---
+.DS_Store
+Thumbs.db

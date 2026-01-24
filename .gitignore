@@ -1,0 +1,7 @@
+bin/
+obj/
+.vs/*
+Logs/
+/TmacProxy/Properties/PublishProfiles
+/TmacProxy/.config
+/TmacProxy/TmacProxy.csproj.user

@@ -1,54 +1,83 @@
-﻿using System.Security.Cryptography;
+﻿using System.IO.Hashing;
 using System.Text;
+
 namespace Togo.Core.Hashing;
 
 public class ConsistentHashRing
 {
-    private readonly SortedDictionary<uint, string> _ring = new();
-    private uint[]? _sortedKeys;
-    private readonly int _virtualNodeCount;
+    private readonly ulong[] _sortedKeys;
+    private readonly string[] _sortedValues;
+    private readonly int _replicationFactor;
 
-    public ConsistentHashRing(IEnumerable<string> servers, int virtualNodeCount = 100)
+    public ConsistentHashRing(IEnumerable<string> nodes, int replicationFactor = 100)
     {
-        _virtualNodeCount = virtualNodeCount;
-        foreach (var server in servers)
+        _replicationFactor = replicationFactor;
+        
+        var keys = new List<ulong>();
+        var values = new Dictionary<ulong, string>();
+
+        foreach (var node in nodes)
         {
-            AddServer(server);
+            for (int i = 0; i < _replicationFactor; i++)
+            {
+                // Create unique virtual node key
+                string virtualNodeKey = $"{node}#{i}";
+                ulong hash = CalculateHash(virtualNodeKey);
+
+                // Collision Handling: Linear Probing
+                // If a collision occurs (extremely rare in 64-bit space), 
+                // we simply move to the next slot. This guarantees determinism and safety.
+                while (values.ContainsKey(hash))
+                {
+                    hash++;
+                }
+
+                keys.Add(hash);
+                values[hash] = node;
+            }
         }
-    } 
-    
-    private void AddServer(string server)
-    {
-        for (int i = 0; i < _virtualNodeCount; i++)
+
+        keys.Sort();
+        _sortedKeys = keys.ToArray();
+        _sortedValues = new string[_sortedKeys.Length];
+
+        // Map sorted keys to their corresponding nodes for O(1) access after binary search
+        for (int i = 0; i < _sortedKeys.Length; i++)
         {
-            string virtualNodeName = $"{server}vnode-{i}";
-            uint hash = CalculateHash(virtualNodeName);
-            _ring[hash] = server;
+            _sortedValues[i] = values[_sortedKeys[i]];
         }
-        _sortedKeys = _ring.Keys.ToArray();
     }
 
-    public string GetPrimary(string key)
+    public string GetNode(string key)
     {
-        if(_sortedKeys == null || _sortedKeys.Length == 0)
+        if (_sortedKeys.Length == 0)
+        {
             throw new InvalidOperationException("Ring is empty.");
-        
-        uint hash = CalculateHash(key);
+        }
+
+        ulong hash = CalculateHash(key);
+
+        // Binary Search for O(log N) lookup
         int index = Array.BinarySearch(_sortedKeys, hash);
+
         if (index < 0)
         {
+            // If exact match not found, get the index of the next larger element (Ceiling)
             index = ~index;
         }
+
         if (index >= _sortedKeys.Length)
         {
+            // Wrap around to the start of the ring (Circle property)
             index = 0;
         }
-        return _ring[_sortedKeys[index]];
+
+        return _sortedValues[index];
     }
-    
-    private uint CalculateHash(string key)
-    { 
-        byte[] hashBytes = SHA256.HashData(Encoding.UTF8.GetBytes(key));
-        return BitConverter.ToUInt32(hashBytes, 0);
+
+    private static ulong CalculateHash(string key)
+    {
+        byte[] bytes = Encoding.UTF8.GetBytes(key);
+        return XxHash64.HashToUInt64(bytes);
     }
 }

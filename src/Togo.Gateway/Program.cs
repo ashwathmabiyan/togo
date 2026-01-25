@@ -1,13 +1,10 @@
-using Togo.Core.Hashing;
+using Togo.Gateway.Policies;
 
-var builder = WebApplication.CreateBuilder();
-
-var serverList = new[]{""};
-
-builder.Services.AddSingleton(new ConsistentHashRing(serverList, 100));
+var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddReverseProxy()
-    .LoadFromConfig(builder.Configuration.GetSection("ReverseProxy"));
+    .LoadFromConfig(builder.Configuration.GetSection("ReverseProxy"))
+    .AddLoadBalancingPolicy<ConsistentHashLoadBalancingPolicy>();
 
 var app = builder.Build();
 app.UseForwardedHeaders();

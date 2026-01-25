@@ -1,4 +1,3 @@
-using Togo.Gateway.Configuration;
 using Togo.Gateway.Policies;
 using Togo.Gateway.Services;
 using Yarp.ReverseProxy.Configuration;
@@ -22,7 +21,6 @@ builder.Services.AddSingleton<IProxyConfigProvider>(configProvider);
 builder.Services.AddHostedService<ConfigPollingWorker>();
 
 builder.Services.AddReverseProxy(); 
-// Note: We removed .LoadFromConfig() because we are providing our own IProxyConfigProvider
 
 var app = builder.Build();
 app.UseForwardedHeaders();

@@ -47,9 +47,8 @@ public class ConsistentHashRing
     }
     
     private uint CalculateHash(string key)
-    {
-        byte[] buffer = Encoding.UTF8.GetBytes(key);
-        byte[] hashBytes = SHA256.HashData(buffer);
+    { 
+        byte[] hashBytes = SHA256.HashData(Encoding.UTF8.GetBytes(key));
         return BitConverter.ToUInt32(hashBytes, 0);
     }
 }

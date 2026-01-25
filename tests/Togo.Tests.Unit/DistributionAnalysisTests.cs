@@ -1,5 +1,4 @@
-using FluentAssertions;
-using System.Text;
+using FluentAssertions; 
 using Togo.Core.Hashing;
 using Xunit.Abstractions;
 

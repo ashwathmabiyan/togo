@@ -44,7 +44,7 @@ public class ConsistentHashRingTests
 
         // Assert 
         // Ideal is 2000 per node. 
-        // We allow +/- 20% variance which is typical for Consistent Hashing with ~200 vNodes.
+        // We allow +/- 25% variance which is typical for Consistent Hashing with ~200 vNodes.
         double ideal = totalKeys / (double)nodes.Length;
         double margin = ideal * 0.25; 
 

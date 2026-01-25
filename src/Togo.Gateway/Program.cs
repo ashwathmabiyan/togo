@@ -12,8 +12,23 @@ builder.Services.AddSingleton<ILoadBalancingPolicy, ConsistentHashLoadBalancingP
 builder.Services.AddHttpClient<RemoteConfigClient>();
 
 // Initial Fallback Config
-var initialRoutes = new List<RouteConfig>();
-var initialClusters = new List<ClusterConfig>();
+var proxySection = builder.Configuration.GetSection("ReverseProxy");
+
+var routesDict = proxySection.GetSection("Routes").Get<Dictionary<string, RouteConfig>>() ?? new();
+var initialRoutes = routesDict.Select(kv => 
+{ 
+    if(string.IsNullOrEmpty(kv.Value.RouteId)) 
+        return kv.Value with { RouteId = kv.Key };
+    return kv.Value; 
+}).ToList();
+
+var clustersDict = proxySection.GetSection("Clusters").Get<Dictionary<string, ClusterConfig>>() ?? new();
+var initialClusters = clustersDict.Select(kv => 
+{ 
+    if(string.IsNullOrEmpty(kv.Value.ClusterId)) 
+        return kv.Value with { ClusterId = kv.Key };
+    return kv.Value; 
+}).ToList();
 var configProvider = new Togo.Gateway.Configuration.InMemoryConfigProvider(initialRoutes, initialClusters);
 
 builder.Services.AddSingleton(configProvider);

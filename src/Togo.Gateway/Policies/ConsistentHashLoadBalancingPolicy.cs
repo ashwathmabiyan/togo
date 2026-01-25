@@ -39,7 +39,7 @@ public class ConsistentHashLoadBalancingPolicy : ILoadBalancingPolicy
     /// <summary>
     /// This method is only called, if the old list of servers held by YARP has been changed. 
     /// </summary>
-    /// <param name="destinations">availableDestinations/param>
+    /// <param name="destinations">availableDestinations</param>
     /// <returns>new consistent hashed ring object</returns>
     private ConsistentHashRing CreateRing(IReadOnlyList<DestinationState> destinations)
     {
@@ -50,7 +50,7 @@ public class ConsistentHashLoadBalancingPolicy : ILoadBalancingPolicy
     private string GetHashKey(HttpContext context)
     {
         // Customizable Strategy for Stickiness:
-        // Priority 1: Explicit "X-Hash-Key" header (useful for testing or specific client control)
+        // Priority 1: Explicit "X-User-ID" header (useful for testing or specific client control)
         // Priority 2: Remote IP Address (Standard for simple sticky sessions)
         // Priority 3: TraceIdentifier (Random fallback if IP is null)
         

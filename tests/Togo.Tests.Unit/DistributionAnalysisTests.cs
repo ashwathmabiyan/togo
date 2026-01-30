@@ -72,4 +72,57 @@ public class DistributionAnalysisTests
         // We accept anything for this analysis tool, but let's say we expect it to run without crashing.
         serverHits.Values.Sum().Should().Be(totalRequests);
     }
+    
+    [Fact]
+    public void AnalyzeFailureImpact()
+    {
+        // 1. Arrange: Start with 4 servers and 100,000 requests
+        var initialServers = new[] { "Server-0", "Server-1", "Server-2", "Server-3" };
+        int vNodes = 500;
+        var originalRing = new ConsistentHashRing(initialServers, vNodes);
+        
+        var requestKeys = Enumerable.Range(0, 100_000)
+                                    .Select(_ => $"req-{Guid.NewGuid()}")
+                                    .ToList();
+    
+        // Mapping: Where do requests go originally?
+        var originalAssignment = requestKeys.ToDictionary(k => k, k => originalRing.GetNode(k));
+    
+        // 2. Act: One server (Server-0) goes offline
+        var remainingServers = initialServers.Where(s => s != "Server-0").ToArray();
+        var newRing = new ConsistentHashRing(remainingServers, vNodes);
+    
+        // Re-Mapping: Where do they go now?
+        int stayedPut = 0;
+        int movedToNewServer = 0;
+        var migrationTargetHits = remainingServers.ToDictionary(s => s, s => 0);
+    
+        foreach (var key in requestKeys)
+        {
+            string oldNode = originalAssignment[key];
+            string newNode = newRing.GetNode(key);
+    
+            if (oldNode == newNode)
+            {
+                stayedPut++;
+            }
+            else
+            {
+                movedToNewServer++;
+                migrationTargetHits[newNode]++;
+            }
+        }
+    
+        // 3. Analyze
+        _output.WriteLine($"Total Requests: {requestKeys.Count:N0}");
+        _output.WriteLine($"Requests originally on Server-0: {originalAssignment.Values.Count(v => v == "Server-0"):N0}");
+        _output.WriteLine($"Total Disrupted Requests (Moved): {movedToNewServer:N0}");
+        _output.WriteLine($"Total Stable Requests (Stayed Put): {stayedPut:N0}");
+        
+        _output.WriteLine("\n--- Migration Distribution (Where did Server-0's load go?) ---");
+        foreach (var kvp in migrationTargetHits)
+        {
+            _output.WriteLine($"{kvp.Key}: received +{kvp.Value:N0} requests");
+        }
+    }
 }
